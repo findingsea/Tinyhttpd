@@ -443,6 +443,10 @@ int startup(u_short *port)
     {  
         error_die("setsockopt failed");
     }
+
+    // bind(): http://man7.org/linux/man-pages/man2/bind.2.html
+    // bind() vs connect(): https://stackoverflow.com/questions/27014955/socket-connect-vs-bind
+    // 创造了 socket 之后，将其绑定到对应的地址上
     if (bind(httpd, (struct sockaddr *)&name, sizeof(name)) < 0)
         error_die("bind");
     if (*port == 0)  /* if dynamically allocating a port */
