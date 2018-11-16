@@ -1,4 +1,4 @@
-*tinyhttpd 中文注释版*
+¡*tinyhttpd 中文注释版。对增加了注释和调试输出，并对部分代码进行了更改。*
 
 A mirror for tinyhttpd(Tinyhttpd非官方镜像,Fork自[sourceForge](https://sourceforge.net/projects/tiny-httpd/),仅供学习)
 
