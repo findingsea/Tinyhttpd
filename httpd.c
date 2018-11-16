@@ -26,6 +26,7 @@
 #include <sys/wait.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <errno.h>
 
 #define ISspace(x) isspace((int)(x))
 
@@ -34,7 +35,7 @@
 #define STDOUT  1
 #define STDERR  2
 
-void accept_request(void *);
+void accept_request(int);
 void bad_request(int);
 void cat(int, FILE *);
 void cannot_execute(int);
@@ -52,9 +53,10 @@ void unimplemented(int);
  * return.  Process the request appropriately.
  * Parameters: the socket connected to the client */
 /**********************************************************************/
-void accept_request(void *arg)
+void accept_request(int client)
 {
-    int client = (intptr_t)arg;
+    printf("Begin to accept request.\n");
+    // int client = (intptr_t)arg;
     char buf[1024];
     size_t numchars;
     char method[255];
@@ -67,6 +69,8 @@ void accept_request(void *arg)
     char *query_string = NULL;
 
     numchars = get_line(client, buf, sizeof(buf));
+    printf("Get buf(%s)\n", buf);
+    printf("Get numchars(%u)\n", numchars);
     i = 0; j = 0;
     while (!ISspace(buf[i]) && (i < sizeof(method) - 1))
     {
@@ -78,6 +82,7 @@ void accept_request(void *arg)
 
     if (strcasecmp(method, "GET") && strcasecmp(method, "POST"))
     {
+        printf("unimplemented method.\n");
         unimplemented(client);
         return;
     }
@@ -86,10 +91,13 @@ void accept_request(void *arg)
         cgi = 1;
 
     i = 0;
-    while (ISspace(buf[j]) && (j < numchars))
+    while (ISspace(buf[j]) && (j < numchars)) {
+        printf("ISspace(buf[j]) && (j < numchars)\n");
         j++;
+    }
     while (!ISspace(buf[j]) && (i < sizeof(url) - 1) && (j < numchars))
     {
+        printf("!ISspace(buf[j]) && (i < sizeof(url) - 1) && (j < numchars)\n");
         url[i] = buf[j];
         i++; j++;
     }
@@ -107,6 +115,8 @@ void accept_request(void *arg)
             query_string++;
         }
     }
+
+    printf("url: %s\n", url);
 
     sprintf(path, "htdocs%s", url);
     if (path[strlen(path) - 1] == '/')
@@ -313,34 +323,19 @@ void execute_cgi(int client, const char *path,
 /**********************************************************************/
 int get_line(int sock, char *buf, int size)
 {
+
+    printf("get sock(%d)\n", sock);
+
     int i = 0;
     char c = '\0';
     int n;
 
-    while ((i < size - 1) && (c != '\n'))
-    {
-        n = recv(sock, &c, 1, 0);
-        /* DEBUG printf("%02X\n", c); */
-        if (n > 0)
-        {
-            if (c == '\r')
-            {
-                n = recv(sock, &c, 1, MSG_PEEK);
-                /* DEBUG printf("%02X\n", c); */
-                if ((n > 0) && (c == '\n'))
-                    recv(sock, &c, 1, 0);
-                else
-                    c = '\n';
-            }
-            buf[i] = c;
-            i++;
-        }
-        else
-            c = '\n';
-    }
-    buf[i] = '\0';
+    // 换成一次读取 1k 字节数据
+    n = recv(sock, buf, size, 0);
+    printf("Recv n(%d) buf(%s)\n", n, buf);
+    buf[n] = '\0';
 
-    return(i);
+    return(n);
 }
 
 /**********************************************************************/
@@ -504,12 +499,14 @@ int main(void)
 
     while (1)
     {
+        // accept(): http://man7.org/linux/man-pages/man2/accept.2.html
         client_sock = accept(server_sock,
                 (struct sockaddr *)&client_name,
                 &client_name_len);
+        printf("accept ret: %d\n", client_sock);
         if (client_sock == -1)
             error_die("accept");
-        accept_request(&client_sock);
+        accept_request(client_sock);
         // if (pthread_create(&newthread , NULL, (void *)accept_request, (void *)(intptr_t)client_sock) != 0)
             // perror("pthread_create");
     }
