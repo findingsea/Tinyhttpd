@@ -72,6 +72,7 @@ void accept_request(int client)
     printf("Get buf(%s)\n", buf);
     printf("Get numchars(%u)\n", numchars);
     i = 0; j = 0;
+    // 获取请求方法，去除前面的空格
     while (!ISspace(buf[i]) && (i < sizeof(method) - 1))
     {
         method[i] = buf[i];
